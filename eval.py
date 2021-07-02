@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from The_Sandstone_Fund import getMyPosition as getPosition
+from Oliver_Momentum_Strat import getMyPosition as getPosition
 
 # Algorithm testing file. 
 # Quantitative judging will be determined from output of this program.
@@ -13,6 +13,7 @@ nt = 0
 
 # Commission rate.
 commRate = 0.0050
+momentum = 24
 
 # Dollar position limit (maximum absolute dollar value of any individual stock position).
 dlrPosLimit = 10000
@@ -27,7 +28,7 @@ pricesFile="./prices250.txt"
 prcAll = loadPrices(pricesFile)
 print ("Loaded %d instruments for %d days" % (nInst, nt))
 
-def calcPL(prcHist):
+def calcPL(prcHist, i):
     cash = 0
     curPos = np.zeros(nInst)
     totDVolume = 0
@@ -38,9 +39,9 @@ def calcPL(prcHist):
     value = 0
     todayPLL = []
     (_,nt) = prcHist.shape
-    for t in range(201,251):
+    for t in range(1, 251):
         prcHistSoFar = prcHist[:,:t]
-        newPosOrig = getPosition(prcHistSoFar)
+        newPosOrig = getPosition(prcHistSoFar, i)
         curPrices = prcHistSoFar[:,-1] 
         posLimits = np.array([int(x) for x in dlrPosLimit / curPrices])
         newPos = np.array([int(p) for p in np.clip(newPosOrig, -posLimits, posLimits)])
@@ -73,7 +74,16 @@ def calcPL(prcHist):
     return (plmu, ret, annSharpe, totDVolume)
 
 # Output.
-(meanpl, ret, sharpe, dvol) = calcPL(prcAll)
+(meanpl, ret, sharpe, dvol) = calcPL(prcAll, momentum)
+
+# rets = []
+# for i in range(13, 50):
+#     (meanpl, ret, sharpe, dvol) = calcPL(prcAll, i)
+#     rets.append((i, meanpl))
+#
+# rets.sort(key=lambda x: x[1], reverse=True)
+# print(rets[:5])
+
 print ("=====")
 print ("mean(PL): %.0lf" % meanpl)
 print ("return: %.5lf" % ret)

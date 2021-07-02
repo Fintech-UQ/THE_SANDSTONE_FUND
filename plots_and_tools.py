@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-
-
-
 def plot_market(prHst):
 
     # get the intial amount of shares owned by puting one dolar in each of them 
