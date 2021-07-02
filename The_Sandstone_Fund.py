@@ -17,7 +17,6 @@ def get_prices_until_the_last_monday(prcSoFar):
     monday_index = current_index - number_of_days_since_moday
 
     # gets an array that includes the prices up until the most recent moday
-
     prices_up_until_monday = prcSoFar.T[:monday_index].T
     return prices_up_until_monday
 
