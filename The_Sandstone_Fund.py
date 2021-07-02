@@ -4,7 +4,6 @@ import math
 
 
 def get_prices_until_the_last_monday(prcSoFar):
-    print(len(prcSoFar[0])%5)
     '''
     determine the number of days since monday. this is because our position
     only changes every monday so we need to calculate what our position
