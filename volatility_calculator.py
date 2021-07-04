@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 from plots_and_tools import get_the_market as get_market
+from scipy.stats import pearsonr, spearmanr, kendalltau
 
 # percent change 
 # correlation coeficent for linear and quadratic 
@@ -11,6 +12,7 @@ from plots_and_tools import get_the_market as get_market
 # volatility is calculated from n number of past weeks
 # beta is a calculation of volatility with respect to a benchmark 
 # use variance as a measure of how far the price of the asset may deviate from the mean
+
 
 
 df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
@@ -33,23 +35,7 @@ def percent_change_volatility(prHst):
 
     average_daily_percent_changes.sort(key=lambda x: x[1])
     return average_daily_percent_changes
-    # for i in range(3):
-    #     stock_index = average_daily_percent_changes[i][0]
-    #     prices = scaled_stocks[stock_index]
-    #     x = list(range(0, len(prices)))
-    #     plt.plot(x, prices)
-    # most_volatile = scaled_stocks[average_daily_percent_changes[-1][0]]
-    # plot the most volatile
-    # x = list(range(0, len(most_volatile)))
-    # plt.plot(x, most_volatile,'red')
 
-    # plot the market
-    # market = get_scaled_market(prHst)
-    # plt.plot(x, market,'red')
-    # plt.title("Top 3 least volatile")
-    # plt.xlabel("days")
-    # plt.ylabel("average daily percent change")
-    # plt.show()
 
 
 def get_scaled_market(prHst):
@@ -69,6 +55,69 @@ def get_scale_stocks(prHst):
             scaled_stock.append(price/scale_factor)
         scaled_stocks.append(scaled_stock)
     return scaled_stocks
+
+def get_returns_of_stock(stock, number_of_days_to_take_returns_over):
+     n = number_of_days_to_take_returns_over
+     returns = []
+     for i in range(0, len(stock) - n, n):
+        # percent change for each day this week
+        percent_return = ((stock[i+5] - stock[i])/stock[i+5])*100
+        returns.append(percent_return)
+     return returns
+ 
+# this indicates how volatile the stock is relative to the market
+# is calculated by getting 
+# ((the std of the stocks returns)/(the std of the markets returns)) * pearson_correlation_coeficient
+def stocks_beta(prHst):
+    # standard deviation of returns for each week
+    # 
+    # comparison_period = len(prHst[0])
+    number_of_days_to_take_returns_over = 20
+    betas = []
+    market_returns = get_returns_of_stock(get_market(prHst), number_of_days_to_take_returns_over)
+    market_std = np.std(market_returns)
+    for i in range(len(prHst)):
+        stock_returns = get_returns_of_stock(prHst[i], number_of_days_to_take_returns_over)
+        stock_std = np.std(stock_returns)
+        cor, p = kendalltau(stock_returns, market_returns)
+        # indicating how volatile it is relative to the market
+        beta = (stock_std/market_std) * cor
+        betas.append((i, beta))
+    ranking_values = []
+    for vals in betas:
+        ranking_values.append((vals[0], abs(vals[1]-1)))
+    ranking_values.sort(key=lambda x: x[1], reverse=True)
+    #return ranking_values
+    betas.sort(key=lambda x: x[1], reverse=True)
+    print(betas)
+    return ranking_values
+
+def plot_stock_volatilities(prHst, stock_volatilities):
+    scaled_stocks = get_scale_stocks(prHst)
+    for i in range(3):
+        stock_index = stock_volatilities[i][0]
+        prices = scaled_stocks[stock_index]
+        avgpric = get_avg_every_5_days(prices)
+        x = list(range(0, len(avgpric)))
+        plt.plot(x, avgpric)
+
+    #plot the market
+    market = get_scaled_market(prHst)
+    plt.plot(get_avg_every_5_days(market), 'red')
+    plt.title("Top 3 least volatile")
+    plt.xlabel("days")
+    plt.ylabel("average daily percent change")
+    plt.show()
     
+def get_avg_every_5_days(arr):
+    every_5_days = []
+    for i in range(0,len(arr) - 5, 5):
+        every_5_days.append(np.average(arr[i:i+5]))
+    return every_5_days
+
+        
+
 if __name__ == "__main__":
     percent_change_volatility(data)
+    stocks_betas = stocks_beta(data)
+    plot_stock_volatilities(data, stocks_betas)
