@@ -5,13 +5,7 @@ import numpy as np
 
 
 
-
-
-
-
-
 def get_the_market(prHst):
-
     # get the intial amount of shares owned by puting one dolar in each of them 
     # the total value should be 250
     # then for each day plot the value 
