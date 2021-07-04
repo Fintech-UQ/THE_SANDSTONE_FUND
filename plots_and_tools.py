@@ -6,7 +6,11 @@ import numpy as np
 
 
 
-def plot_market(prHst):
+
+
+
+
+def get_the_market(prHst):
 
     # get the intial amount of shares owned by puting one dolar in each of them 
     # the total value should be 250
@@ -26,6 +30,11 @@ def plot_market(prHst):
             value_for_the_day += day[i]*number_of_shares_owned_for_each_stock[i]
         the_market_value.append(value_for_the_day)
     
+    return the_market_value
+
+
+def plot_market(prHst):
+    the_market_value = get_the_market(prHst)
     x = list(range(0, len(the_market_value)))
     plt.plot(x, the_market_value)
     plt.title("$1 in each stock from day 1 - 250")
@@ -35,10 +44,25 @@ def plot_market(prHst):
     print("value change: ", the_market_value[-1] - the_market_value[0], "percent_change: ",
      ((the_market_value[-1]- the_market_value[0])/the_market_value[-1])*100)
     plt.show()
-    return the_market_value
 
-
-
+# plots the average percent change of the market every 5 days
+def plot_average_market_percent_change(prHst):
+    the_market_values = get_the_market(prHst)
+    percent_change_avg_every_5_days = []
+    for i in range(1, len(the_market_values) -5, 5):
+        # percent change for each day this week
+        percent_change_for_each_day = []
+        for j in range(i, i + 5):
+            percent_change_today = ((the_market_values[j] - the_market_values[j-1])/the_market_values[j])*100
+            percent_change_for_each_day.append(percent_change_today)
+        average_change_this_week = np.average(percent_change_for_each_day)
+        percent_change_avg_every_5_days.append(average_change_this_week)
+    x = list(range(0, len(percent_change_avg_every_5_days)))
+    plt.plot(x, percent_change_avg_every_5_days)
+    plt.title("Average Percent Change Every week (5 days)")
+    plt.xlabel("weeks")
+    plt.ylabel("Average percent change")
+    plt.show()
 
 
 
@@ -54,4 +78,4 @@ df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
 # the T attribute swaps the rows and columns so the rows are now the stock prices
 data = df.values.T
 
-plot_market(data)
+plot_average_market_percent_change(data)
