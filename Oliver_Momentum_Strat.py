@@ -19,23 +19,6 @@ def get_current_hold_prices(prcSoFar):
 
     return prcSoFar.T[:monday_index].T
 
-
-def get_market(prHst):
-    number_of_shares_owned_for_each_stock = []
-    for stock in prHst:
-        number_of_shares_owned_for_each_stock.append(1 / stock[0])
-
-    the_market_value = []
-    # looping through each day
-    for day in prHst.T:
-        value_for_the_day = 0
-        # loops through the prices of each stock for that day
-        for i in range(len(day)):
-            value_for_the_day += day[i] * number_of_shares_owned_for_each_stock[i]
-        the_market_value.append(value_for_the_day)
-    return the_market_value
-
-
 def get_rankings(prices_up_until_monday):
     stocks = []
     for i, stock in enumerate(prices_up_until_monday):
