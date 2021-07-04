@@ -1,7 +1,7 @@
 import numpy as np
 import math
 from sklearn.linear_model import LinearRegression
-
+from plots_and_tools import get_the_market as get_market
 momentumSize = 24 * 5
 
 
@@ -16,24 +16,6 @@ def get_prices_until_the_last_monday(prcSoFar):
     # gets an array that includes the prices up until the most recent moday
     prices_up_until_monday = prcSoFar.T[:monday_index].T
     return prices_up_until_monday
-
-
-def get_market(prHst):
-    number_of_shares_owned_for_each_stock = []
-    for stock in prHst:
-        # add the number of shares owned on day 1 (index 0) if $1 is invested
-        number_of_shares_owned_for_each_stock.append(1 / stock[0])
-
-    # an array for the market value for each day of $1 in each stonk
-    the_market_value = []
-    # looping through each day
-    for day in prHst.T:
-        value_for_the_day = 0
-        # loops through the prices of each stock for that day
-        for i in range(len(day)):
-            value_for_the_day += day[i] * number_of_shares_owned_for_each_stock[i]
-        the_market_value.append(value_for_the_day)
-    return the_market_value
 
 
 def get_rankings(prices_up_until_monday):

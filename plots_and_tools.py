@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-
+import math
 
 
 
@@ -48,11 +48,11 @@ def plot_average_market_percent_change(prHst):
         percent_change_for_each_day = []
         for j in range(i, i + 5):
             percent_change_today = ((the_market_values[j] - the_market_values[j-1])/the_market_values[j])*100
-            percent_change_for_each_day.append(percent_change_today)
+            percent_change_for_each_day.append(abs(percent_change_today))
         average_change_this_week = np.average(percent_change_for_each_day)
         percent_change_avg_every_5_days.append(average_change_this_week)
     x = list(range(0, len(percent_change_avg_every_5_days)))
-    plt.plot(x, percent_change_avg_every_5_days)
+    plt.bar(x, percent_change_avg_every_5_days)
     plt.title("Average Percent Change Every week (5 days)")
     plt.xlabel("weeks")
     plt.ylabel("Average percent change")
@@ -67,9 +67,8 @@ def convert_txt_file_to_csv(txt_file_name, new_csv_file_name):
     read_file=pd.read_csv(txt_file_name,sep='\s+', header=None, index_col=None)
     read_file.to_csv(new_csv_file_name, header=None,index=None)
 
-
-df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
-# the T attribute swaps the rows and columns so the rows are now the stock prices
-data = df.values.T
-
-plot_average_market_percent_change(data)
+if __name__ == "__main__":
+    df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
+    # the T attribute swaps the rows and columns so the rows are now the stock prices
+    data = df.values.T
+    plot_average_market_percent_change(data)
