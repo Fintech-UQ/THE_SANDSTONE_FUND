@@ -2,33 +2,38 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from Oliver_Momentum_Strat import getMyPosition as getPosition
-
-# Algorithm testing file. 
-# Quantitative judging will be determined from output of this program.
-# Judging will use unseeen, future price data from the same universe.
 
 nInst = 0
 nt = 0
-
-# Commission rate.
 commRate = 0.0050
-momentum = 24
-
-# Dollar position limit (maximum absolute dollar value of any individual stock position).
 dlrPosLimit = 10000
+holding_period = 5
+data_history = 24 * 5
+ranking = "growth"
+waiting_period = 6
 
 def loadPrices(fn):
     global nt, nInst
-    df=pd.read_csv(fn, sep='\s+', header=None, index_col=None)
+    df = pd.read_csv(fn, sep='\s+', header=None, index_col=None)
     nt, nInst = df.values.shape
-    return (df.values).T
+    return df.values.T
 
-pricesFile="./prices250.txt"
+
+pricesFile = "./prices250.txt"
 prcAll = loadPrices(pricesFile)
-print ("Loaded %d instruments for %d days" % (nInst, nt))
 
-def calcPL(prcHist, i):
+
+def print_results(mean_pl, returns, sharpe_value, d_vol):
+    print("=====")
+    print("mean(PL): %.0lf" % mean_pl)
+    print("return: %.5lf" % returns)
+    print("annSharpe(PL): %.2lf " % sharpe_value)
+    print("totDvolume: %.0lf " % d_vol)
+
+
+def calcPL(prcHist, parameters):
     cash = 0
     curPos = np.zeros(nInst)
     totDVolume = 0
@@ -38,11 +43,11 @@ def calcPL(prcHist, i):
     frac1 = 0.
     value = 0
     todayPLL = []
-    (_,nt) = prcHist.shape
+    (_, nt) = prcHist.shape
     for t in range(1, 251):
-        prcHistSoFar = prcHist[:,:t]
-        newPosOrig = getPosition(prcHistSoFar, i)
-        curPrices = prcHistSoFar[:,-1] 
+        prcHistSoFar = prcHist[:, :t]
+        newPosOrig = getPosition(prcHistSoFar, parameters)
+        curPrices = prcHistSoFar[:, -1]
         posLimits = np.array([int(x) for x in dlrPosLimit / curPrices])
         newPos = np.array([int(p) for p in np.clip(newPosOrig, -posLimits, posLimits)])
         deltaPos = newPos - curPos
@@ -65,30 +70,35 @@ def calcPL(prcHist, i):
             ret = value / totDVolume
             frac0 = totDVolume0 / totDVolume
             frac1 = totDVolume1 / totDVolume
-        print ("Day %d value: %.2lf todayPL: $%.2lf $-traded: %.0lf return: %.5lf frac0: %.4lf frac1: %.4lf" % (t,value, todayPL, totDVolume, ret, frac0, frac1))
+        # print("Day %d value: %.2lf todayPL: $%.2lf $-traded: %.0lf return: %.5lf frac0: %.4lf frac1: %.4lf" % (
+        # t, value, todayPL, totDVolume, ret, frac0, frac1))
     pll = np.array(todayPLL)
-    (plmu,plstd) = (np.mean(pll), np.std(pll))
+    (plmu, plstd) = (np.mean(pll), np.std(pll))
     annSharpe = 0.0
     if (plstd > 0):
         annSharpe = 16 * plmu / plstd
     return (plmu, ret, annSharpe, totDVolume)
 
-# Output.
-(meanpl, ret, sharpe, dvol) = calcPL(prcAll, momentum)
 
-# rets = []
-# for i in range(13, 50):
-#     (meanpl, ret, sharpe, dvol) = calcPL(prcAll, i)
-#     rets.append((i, meanpl))
-#
-# rets.sort(key=lambda x: x[1], reverse=True)
-# print(rets[:5])
+def adjust_hyper_parameters(holding_range, history_range, ranking_range, waiting_range, stock_range):
+    result = []
+    for i in range(holding_range[0], holding_range[1] + 1):
+        for j in range(history_range[0], history_range[1] + 1):
+            for k in ranking_range:
+                for m in range(waiting_range[0], waiting_range[1] + 1):
+                    for n in range(stock_range[0], stock_range[1]):
+                        if m <= i:
+                            # print("Starting: ", i, j, k, m, n)
+                            parameters = (i, j * 5, k, m, n)
+                            (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
+                            result.append(((i, j, k, m, n), (meanpl, ret, sharpe, dvol)))
+                            # print("Finished: ", i, j, k, m, n)
+    result.sort(key=lambda x: x[1][1], reverse=True)
+    return result
 
-print ("=====")
-print ("mean(PL): %.0lf" % meanpl)
-print ("return: %.5lf" % ret)
-print ("annSharpe(PL): %.2lf " % sharpe)
-print ("totDvolume: %.0lf " % dvol)
 
+parameters = (holding_period, data_history, ranking, waiting_period)
 
-
+params = adjust_hyper_parameters((1, 5), (1, 40), ("growth", "vol", "g.v"), (1, 10), (10, 40))
+print(params[:10])
+# (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
