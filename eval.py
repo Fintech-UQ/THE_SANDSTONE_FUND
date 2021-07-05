@@ -2,20 +2,13 @@
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from Oliver_Momentum_Strat import getMyPosition as getPosition
-
-# Algorithm testing file. 
-# Quantitative judging will be determined from output of this program.
-# Judging will use unseeen, future price data from the same universe.
 
 nInst = 0
 nt = 0
-
-# Commission rate.
 commRate = 0.0050
 momentum = 24
-
-# Dollar position limit (maximum absolute dollar value of any individual stock position).
 dlrPosLimit = 10000
 
 def loadPrices(fn):
@@ -26,7 +19,8 @@ def loadPrices(fn):
 
 pricesFile="./prices250.txt"
 prcAll = loadPrices(pricesFile)
-print ("Loaded %d instruments for %d days" % (nInst, nt))
+print("Loaded %d instruments for %d days" % (nInst, nt))
+
 
 def calcPL(prcHist, i):
     cash = 0
@@ -38,11 +32,12 @@ def calcPL(prcHist, i):
     frac1 = 0.
     value = 0
     todayPLL = []
-    (_,nt) = prcHist.shape
+    (_, nt) = prcHist.shape
     for t in range(1, 251):
-        prcHistSoFar = prcHist[:,:t]
-        newPosOrig = getPosition(prcHistSoFar, i)
-        curPrices = prcHistSoFar[:,-1] 
+        prcHistSoFar = prcHist[:, :t]
+        parameters = (momentumSize, holdingPeriod, positionThreshold)
+        newPosOrig = getPosition(prcHistSoFar, parameters)
+        curPrices = prcHistSoFar[:, -1]
         posLimits = np.array([int(x) for x in dlrPosLimit / curPrices])
         newPos = np.array([int(p) for p in np.clip(newPosOrig, -posLimits, posLimits)])
         deltaPos = newPos - curPos
@@ -83,6 +78,7 @@ def calcPL(prcHist, i):
 #
 # rets.sort(key=lambda x: x[1], reverse=True)
 # print(rets[:5])
+
 
 print ("=====")
 print ("mean(PL): %.0lf" % meanpl)

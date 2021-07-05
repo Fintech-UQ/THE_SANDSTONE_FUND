@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
 momentumSize = 24 * 5
@@ -114,24 +115,24 @@ def getMyPosition(prcSoFar, i):
 
     position = np.zeros(100)
 
-    winners = stock_returns[:33]
+    winners = stock_returns[:15]
 
-    losers = stock_returns[67:]
+    # losers = stock_returns[99:]
 
     winners_evaluated = get_weighted_rankings(winners, prcSoFar, prices_up_until_monday)
 
     for i, winner in enumerate(winners):
         index, change = winner
         price = prices_up_until_monday[index][-1]
-        number_of_shares = math.floor((5000/(i + 1)) / price)
+        number_of_shares = math.floor(((5000 + (33 - i) * 100) /(i + 1)) / price)
         if change > 0:
             position[index] = number_of_shares
 
     # for i, loser in enumerate(losers):
-    #     rank = 33 - i
+    #     rank = 5 - i
     #     index, change = loser
     #     price = prices_up_until_monday[index][-1]
-    #     number_of_shares = -1 * (math.floor((1000 / rank) / price))
+    #     number_of_shares = -1 * (math.floor((5000 / rank) / price))
     #     position[index] = number_of_shares
 
     update_position(position, prcSoFar)
@@ -139,9 +140,33 @@ def getMyPosition(prcSoFar, i):
     return position
 
 
+def plot_market(prHst):
+    # get the intial amount of shares owned by puting one dolar in each of them
+    # the total value should be 250
+    # then for each day plot the value
+    number_of_shares_owned_for_each_stock = []
+    for stock in prHst:
+        # add the number of shares owned on day 1 (index 0) if $1 is invested
+        number_of_shares_owned_for_each_stock.append(1 / stock[0])
 
+    # an array for the market value for each day of $1 in each stonk
+    the_market_value = []
+    # looping through each day
+    for day in prHst.T:
+        value_for_the_day = 0
+        # loops through the prices of each stock for that day
+        for i in range(len(day)):
+            value_for_the_day += day[i] * number_of_shares_owned_for_each_stock[i]
+        the_market_value.append(value_for_the_day)
 
-
-
-
+    x = list(range(0, len(the_market_value)))
+    plt.plot(x, the_market_value)
+    plt.title("$1 in each stock from day 1 - 250")
+    plt.xlabel("days")
+    plt.ylabel("$1 portfolio value")
+    print("start value: ", the_market_value[0], "end value: ", the_market_value[-1])
+    print("value change: ", the_market_value[-1] - the_market_value[0], "percent_change: ",
+          ((the_market_value[-1] - the_market_value[0]) / the_market_value[-1]) * 100)
+    plt.show()
+    return the_market_value
 
