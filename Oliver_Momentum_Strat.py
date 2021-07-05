@@ -1,76 +1,44 @@
 import numpy as np
 import math
-from sklearn.linear_model import LinearRegression
-from plots_and_tools import get_the_market as get_market
-momentumSize = 24 * 5
+import pandas as pd
+import matplotlib.pyplot as plt
+import time
+from sklearn.preprocessing import MinMaxScaler
+
+holding_period = 5
+data_history = 24 * 5
+ranking = "growth"
+waiting_period = 6
+no_stocks = 15
+std_days = 60
+np.set_printoptions(suppress=True)
 
 
-def get_prices_until_the_last_monday(prcSoFar):
-    tmp = prcSoFar.shape[1] % 5 - 1
-    number_of_days_since_moday = 4 if tmp == -1 else tmp
-
-    # gets the index of the most recent monday
+def get_current_hold_prices(prcSoFar):
+    tmp = prcSoFar.shape[1] % holding_period - 1
+    days_since_hold = holding_period - 1 if tmp == -1 else tmp
     current_index = prcSoFar.shape[1] - 1
-    monday_index = current_index - number_of_days_since_moday
-
-    # gets an array that includes the prices up until the most recent moday
-    prices_up_until_monday = prcSoFar.T[:monday_index].T
-    return prices_up_until_monday
+    monday_index = current_index - days_since_hold
+    return prcSoFar.T[:monday_index].T
 
 
-def get_rankings(prices_up_until_monday):
+def get_volatility(data, days):
+    results = []
+    for i in range(100):
+        std = np.std(data[i][-days:]) * np.sqrt(days)
+        results.append(std)
+    return results
+
+
+def get_returns(prices_up_until_monday):
     stocks = []
     for i, stock in enumerate(prices_up_until_monday):
         index = len(stock) - 1
-        start_monday_index = index - momentumSize
-        end_friday_index = index - 6
-
+        start_monday_index = index - data_history
+        end_friday_index = index - waiting_period
         percent_return = ((stock[end_friday_index] - stock[start_monday_index]) / stock[end_friday_index]) * 100
-
-        stocks.append((i, percent_return))
-
-    stocks.sort(key=lambda x: x[1], reverse=True)
+        stocks.append(percent_return)
     return stocks
-
-
-def get_weighted_rankings(winners, prcSoFar, mondayStuff):
-    weeks = 10
-    days = -10
-
-    rankings = []
-    for winner in winners:
-        index, change = winner
-        changes = []
-        for i in range(weeks):
-            percent_change = (mondayStuff[index][days + 4] - mondayStuff[index][days]) / mondayStuff[index][days + 4]
-            changes.append(percent_change)
-        avg = np.average(changes)
-        rankings.append((index, avg))
-
-    rankings.sort(key=lambda x: x[1], reverse=True)
-    return rankings
-
-    # Regression
-    # train_x = np.array(range(10)).reshape(-1, 1)
-    # test_x = np.array(range(11, 21)).reshape(-1, 1)
-    # rankings = []
-    # for winner in winners:
-    #     index, change = winner
-    #
-    #     train_y = np.array(prcSoFar[index][-20:-10]).reshape(-1, 1)
-    #     model = LinearRegression()
-    #     model.fit(train_x, train_y)
-    #     predicted = model.predict(test_x)
-    #     real_y = prcSoFar[index][-10:]
-    #
-    #     sum_var = 0
-    #     for i in range(len(predicted)):
-    #         sum_var += abs(real_y[i] - predicted[i])
-    #     var = sum_var / len(predicted)
-    #
-    #     rankings.append((index, var))
-    # rankings.sort(key=lambda x: x[1], reverse=True)
-    # return rankings
 
 
 def update_position(currentPositions, prcSoFar):
@@ -80,50 +48,105 @@ def update_position(currentPositions, prcSoFar):
             print(f"Sold {i} on day {prcSoFar.shape[1]}")
 
 
-def getMyPosition(prcSoFar, i):
-    '''
-    :param prcSoFar: Price's at the current time
-    :return: Vector of our current positions
-    '''
-    momentumSize = i * 5
-    # Check if momentumSize weeks have passed
-    if prcSoFar.shape[1] <= momentumSize:
-        return np.zeros(100)
+def get_data(prcSoFar):
+    returns = get_returns(prcSoFar)
+    std = get_volatility(prcSoFar, std_days)
+    results = []
+    for i in range(100):
+        results.append((i, returns[i], std[i]))
+    return results
 
-    prices_up_until_monday = get_prices_until_the_last_monday(prcSoFar)
 
-    stock_returns = get_rankings(prices_up_until_monday)
+def set_parameters(parameters):
+    global holding_period, waiting_period, data_history, ranking, no_stocks, std_days
+    (holding_period, data_history, ranking, waiting_period, no_stocks, std_days) = parameters
 
+
+def scale(prHst):
+    stocks = []
+    for old_stock in prHst:
+        stock = []
+        start_price = old_stock[0]
+        for price in old_stock:
+            stock.append(price/start_price)
+        stocks.append(stock)
+    return stocks
+
+
+def get_position_size(hold, short):
+    hold.sort(key=lambda x: x[1], reverse=True)
+    short.sort(key=lambda x: x[1])
+    benchmark_hold = hold[0][1]
+    benchmark_short = short[0][1]
+
+    positions = []
+    for (index, value) in hold:
+        positions.append((index, (value/benchmark_hold) * 9500))
+
+    for (index, value) in short:
+        positions.append((index, -1 * (value/benchmark_short) * 9500))
+
+    return positions
+
+
+
+def getMyPosition(prcSoFar, parameters):
+    global holding_period, waiting_period, data_history, ranking, no_stocks
+    set_parameters(parameters)
     position = np.zeros(100)
 
-    winners = stock_returns[:33]
+    if prcSoFar.shape[1] <= data_history:
+        return np.zeros(100)
 
-    losers = stock_returns[67:]
+    current_hold_prices = get_current_hold_prices(prcSoFar)
+    scaled_data = scale(current_hold_prices)
+    stock_data = get_data(scaled_data)
 
-    winners_evaluated = get_weighted_rankings(winners, prcSoFar, prices_up_until_monday)
+    if ranking == "growth":
+        stock_data.sort(key=lambda x: x[1], reverse=True)
+        winners = stock_data[:no_stocks]
+        for i, winner in enumerate(winners):
+            index, ret, std = winner
+            price = current_hold_prices[index][-1]
+            number_of_shares = math.floor((5000/(i + 1)) / price)
+            if ret > 0:
+                position[index] = number_of_shares
+    elif ranking == "hybrid":
+        array = np.array(stock_data)
+        df = pd.DataFrame(array, columns=("index", "returns", "std"))
+        x = np.linspace(0, 1, 1000)
+        y = 1 + 0.25 * x
+        y_neg = -1 * y
+        y_zero = np.zeros(1000)
 
-    for i, winner in enumerate(winners):
-        index, change = winner
-        price = prices_up_until_monday[index][-1]
-        number_of_shares = math.floor((5000/(i + 1)) / price)
-        if change > 0:
-            position[index] = number_of_shares
+        hold = []
+        short = []
+        dead_zone = []
+        for i, (x_value, y_value) in enumerate(zip(df["std"], df["returns"])):
+            expected_y_positive = 1 + 0.56 * x_value
+            expected_y_negative = -1 * expected_y_positive
+            if y_value >= expected_y_positive:
+                hold.append((i,(y_value - 1) / x_value))
+            elif y_value <= expected_y_negative:
+                short.append((i, (y_value - 1) / x_value))
+            else:
+                dead_zone.append((i, y_value / x_value))
 
-    # for i, loser in enumerate(losers):
-    #     rank = 33 - i
-    #     index, change = loser
-    #     price = prices_up_until_monday[index][-1]
-    #     number_of_shares = -1 * (math.floor((1000 / rank) / price))
-    #     position[index] = number_of_shares
+        positions = get_position_size(hold, short)
 
-    update_position(position, prcSoFar)
+        for (index, money) in positions:
+            if money > 0:
+                position[index] = math.floor(money/current_hold_prices[index][-1])
+
+        # fig, ax = plt.subplots()
+        # ax.scatter(df["std"], df["returns"])
+        # ax.scatter(x, y, marker='_')
+        # for i, (x_1, y_1) in enumerate(zip(df["std"], df["returns"])):
+        #     ax.annotate(i, (x_1, y_1))
+        # ax.scatter(x, y_neg, marker='_')
+        # ax.scatter(x, y_zero, marker='_')
+        # plt.show()
+
+    # update_position(position, prcSoFar)
 
     return position
-
-
-
-
-
-
-
-
