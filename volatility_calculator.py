@@ -115,9 +115,23 @@ def get_avg_every_5_days(arr):
         every_5_days.append(np.average(arr[i:i+5]))
     return every_5_days
 
+
+def volatility_return_ranker(prHist):
+    num_days = 30
+    vol = []
+    for i in range(len(prHist)):
+        stock = prHist[i]
+        past_n_days = stock[len(prHist) - num_days:]
         
+        vol.append((i, np.std(past_n_days)*math.sqrt(num_days)))
+    vol.sort()
+    print(vol)
+    # ((percent return)/(vol*som_constant) - 1)*something
+    # dead_zone is volatility*gradient = return 
+
 
 if __name__ == "__main__":
-    percent_change_volatility(data)
-    stocks_betas = stocks_beta(data)
-    plot_stock_volatilities(data, stocks_betas)
+    #percent_change_volatility(data)
+    #stocks_betas = stocks_beta(data)
+    #plot_stock_volatilities(data, stocks_betas)
+    volatility_return_ranker(data)

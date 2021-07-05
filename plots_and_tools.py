@@ -3,6 +3,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
+def scale(prHst):
+    stocks = []
+    for old_stock in prHst:
+        stock = []
+        start_price = old_stock[0]
+        for price in old_stock:
+            stock.append(price/start_price)
+        stocks.append(stock)
+    return stocks
+
 
 
 def get_the_market(prHst):
@@ -67,8 +77,19 @@ def convert_txt_file_to_csv(txt_file_name, new_csv_file_name):
     read_file=pd.read_csv(txt_file_name,sep='\s+', header=None, index_col=None)
     read_file.to_csv(new_csv_file_name, header=None,index=None)
 
+def plot_stock(prHst, stock_index):
+    y = prHst[stock_index]
+    x = list(range(0, len(y)))
+    plt.plot(x, y)
+    plt.show()
+
+
 if __name__ == "__main__":
     df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
     # the T attribute swaps the rows and columns so the rows are now the stock prices
     data = df.values.T
-    plot_average_market_percent_change(data)
+    plot_stock(data, 33)
+    # greatest ret/vol then give it 5k
+    # then multiply that by the 5k
+    # if return is less then its volatility*gradient yeet it
+    #plot_average_market_percent_change(data)

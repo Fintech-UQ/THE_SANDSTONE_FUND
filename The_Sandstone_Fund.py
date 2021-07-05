@@ -46,18 +46,19 @@ def getMyPosition (prcSoFar):
 
         # percent return 
         percent_return = ((stock[end_friday_index] - stock[start_monday_index])/stock[end_friday_index])*100
-
-        # last weeks(13 weeks since the first monday) return
-        last_monday_index = index - 5
-        last_friday_index = index - 1
-        last_weeks_return = ((stock[last_friday_index] - stock[last_monday_index])/stock[last_friday_index])*100
-
-        momentum_return = percent_return - last_weeks_return
-        stock_returns.append((i, momentum_return))
+        period = stock[start_monday_index:end_friday_index]
+        vol = np.std(period)*len(period)
+       
+        momentum_return = percent_return
+        stock_returns.append((i, momentum_return, vol))
     
     # sorts them in order of their return 
     stock_returns.sort(key = lambda x: x[1], reverse=True) 
-
+    print('THE VERY BEGINNING')
+    print('THE VERY BEGINNING')
+    print('THE VERY BEGINNING')
+    print('THE VERY BEGINNING')
+    print(stock_returns)
 
     '''
     make a list of zeros then loop through the top 33 ranked stocks
