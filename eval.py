@@ -11,8 +11,10 @@ commRate = 0.0050
 dlrPosLimit = 10000
 holding_period = 5
 data_history = 24 * 5
-ranking = "growth"
+ranking = "hybrid"
 waiting_period = 6
+no_stocks = 15
+std_days = 60
 
 def loadPrices(fn):
     global nt, nInst
@@ -70,8 +72,8 @@ def calcPL(prcHist, parameters):
             ret = value / totDVolume
             frac0 = totDVolume0 / totDVolume
             frac1 = totDVolume1 / totDVolume
-        # print("Day %d value: %.2lf todayPL: $%.2lf $-traded: %.0lf return: %.5lf frac0: %.4lf frac1: %.4lf" % (
-        # t, value, todayPL, totDVolume, ret, frac0, frac1))
+        print("Day %d value: %.2lf todayPL: $%.2lf $-traded: %.0lf return: %.5lf frac0: %.4lf frac1: %.4lf" % (
+        t, value, todayPL, totDVolume, ret, frac0, frac1))
     pll = np.array(todayPLL)
     (plmu, plstd) = (np.mean(pll), np.std(pll))
     annSharpe = 0.0
@@ -97,8 +99,10 @@ def adjust_hyper_parameters(holding_range, history_range, ranking_range, waiting
     return result
 
 
-parameters = (holding_period, data_history, ranking, waiting_period)
+parameters = (holding_period, data_history, ranking, waiting_period, no_stocks, std_days)
 
-params = adjust_hyper_parameters((1, 5), (1, 40), ("growth", "vol", "g.v"), (1, 10), (10, 40))
-print(params[:10])
-# (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
+# params = adjust_hyper_parameters((1, 5), (1, 40), ("growth", "vol", "g.v"), (1, 10), (10, 40))
+# print(params[:10])
+
+(meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
+print_results(meanpl, ret, sharpe, dvol)
