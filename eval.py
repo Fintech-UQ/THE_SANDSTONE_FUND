@@ -10,12 +10,12 @@ nt = 0
 commRate = 0.0050
 dlrPosLimit = 10000
 holding_period = 5
-data_history = 24 * 5
+data_history = 24 * 5 + 1
 ranking = "regression"
 cut_off_max = 10
 cut_off_min = 5
 cut_off_r = 0.5
-std_days = 30
+std_days = 60
 
 def loadPrices(fn):
     global nt, nInst
