@@ -4,16 +4,17 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from Oliver_Momentum_Strat import getMyPosition as getPosition
+from plots_and_tools import get_the_market
 
 nInst = 0
 nt = 0
 commRate = 0.0050
 dlrPosLimit = 10000
-holding_period = 5
-data_history = 24 * 5 + 1
+holding_period = 7
+data_history = 121
 ranking = "regression"
 cut_off_max = 10
-cut_off_min = 5
+cut_off_min = 4
 cut_off_r = 0.5
 std_days = 60
 
@@ -28,6 +29,19 @@ pricesFile = "./prices250.txt"
 prcAll = loadPrices(pricesFile)
 
 
+def plot_price(prices):
+    x = list(range(0, 250))
+    index = get_the_market(prcAll)
+    fig, ax = plt.subplots()
+    ax.plot(x, prices, color="red", marker="o", markersize=2.5)
+    ax.set_ylabel("Earnings $", fontsize=14)
+    ax.set_xlabel("Trading Days", fontsize=14)
+    ax2 = ax.twinx()
+    ax2.plot(x, index, color="blue", marker="o", markersize=2.5)
+    ax2.set_ylabel("Index Price $", fontsize=14)
+    plt.show()
+
+
 def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("=====")
     print("mean(PL): %.0lf" % mean_pl)
@@ -35,7 +49,7 @@ def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("annSharpe(PL): %.2lf " % sharpe_value)
     print("totDvolume: %.0lf " % d_vol)
 
-
+values_over_data = []
 def calcPL(prcHist, parameters):
     cash = 0
     curPos = np.zeros(nInst)
@@ -68,6 +82,7 @@ def calcPL(prcHist, parameters):
         todayPL = cash + posValue - value
         todayPLL.append(todayPL)
         value = cash + posValue
+        values_over_data.append(value)
         ret = 0.0
         if (totDVolume > 0):
             ret = value / totDVolume
@@ -80,6 +95,7 @@ def calcPL(prcHist, parameters):
     annSharpe = 0.0
     if (plstd > 0):
         annSharpe = 16 * plmu / plstd
+
     return (plmu, ret, annSharpe, totDVolume)
 
 
@@ -109,3 +125,4 @@ parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r,
 
 (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
 print_results(meanpl, ret, sharpe, dvol)
+plot_price(values_over_data)
