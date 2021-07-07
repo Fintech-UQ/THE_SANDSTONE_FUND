@@ -2,7 +2,7 @@
 
 import numpy as np
 import pandas as pd
-from The_Sandstone_Fund import getMyPosition as getPosition
+from test import getMyPosition as getPosition
 
 # Algorithm testing file. 
 # Quantitative judging will be determined from output of this program.
