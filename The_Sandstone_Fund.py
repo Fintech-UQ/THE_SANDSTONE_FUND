@@ -21,8 +21,22 @@ def get_prices_until_the_last_monday(prcSoFar):
     return prices_up_until_monday
 
 
+def get_the_market(prHst):
+    # get the intial amount of shares owned by puting one dolar in each of them 
+    # the total value should be 250
+    # then for each day plot the value 
+    number_of_shares_owned_for_each_stock = []
+    for stock in prHst:
+        #add the number of shares owned on day 1 (index 0) if $1 is invested
+        number_of_shares = 1/stock[0]
+        number_of_shares_owned_for_each_stock.append(number_of_shares)
+    # this is value not number of stocks
+
+    return number_of_shares_owned_for_each_stock
+
 
 def getMyPosition (prcSoFar):
+    return get_the_market(prcSoFar)
     # if 13 weeks have not passed then we do not take a position
     if len(prcSoFar) <= 65:
         return np.zeros(100)
@@ -75,7 +89,8 @@ def getMyPosition (prcSoFar):
         percent_return = stock_returns[i][1]
         if percent_return > 0:
             position[stock_index] = number_of_shares
-        
+    
+    
     return position
 
 

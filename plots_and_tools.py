@@ -83,12 +83,32 @@ def plot_stock(prHst, stock_index):
     plt.plot(x, y)
     plt.show()
 
+def plot_scaled_stock(prHst, stock_index):
+    scaled_stocks = scale(prHst)
+    y = scaled_stocks[stock_index]
+    x = list(range(0, len(y)))
+    plt.plot(x, y)
+    plt.show()
+
+
+def get_line_of_best_fit_error(stock):
+    xs = list(range(0, len(stock)))
+    weights = np.polyfit(xs, stock, 1)
+    model = np.poly1d(weights)
+    y_predict = model(xs)
+    for x in xs:
+        error = stock[x] - y_predict[x]
+    #return y_predict
+
+
 
 if __name__ == "__main__":
     df=pd.read_csv('prices250.txt', sep='\s+', header=None, index_col=None)
     # the T attribute swaps the rows and columns so the rows are now the stock prices
     data = df.values.T
-    plot_stock(data, 33)
+    plot_scaled_stock(data, 49)
+    #get_the_market(data)
+    #plot_market(data)
     # greatest ret/vol then give it 5k
     # then multiply that by the 5k
     # if return is less then its volatility*gradient yeet it
