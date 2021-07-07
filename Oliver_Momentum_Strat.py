@@ -3,14 +3,16 @@ import math
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LinearRegression
 
 holding_period = 5
 data_history = 24 * 5
-ranking = "growth"
-waiting_period = 6
-no_stocks = 15
+ranking = "regression"
+waiting_period = 0
 std_days = 60
+cut_off_max = 10
+cut_off_min = 5
+cut_off_r = 0.5
 np.set_printoptions(suppress=True)
 
 
@@ -51,15 +53,18 @@ def update_position(currentPositions, prcSoFar):
 def get_data(prcSoFar):
     returns = get_returns(prcSoFar)
     std = get_volatility(prcSoFar, std_days)
+    x_values = np.array(list(range(prcSoFar.shape[1] - std_days, prcSoFar.shape[1]))).reshape(-1, 1)
     results = []
     for i in range(100):
-        results.append((i, returns[i], std[i]))
+        reg_model = LinearRegression()
+        reg_model.fit(x_values, prcSoFar[i][-std_days:])
+        results.append((i, returns[i], std[i], reg_model.score(x_values, prcSoFar[i][-std_days:])))
     return results
 
 
 def set_parameters(parameters):
-    global holding_period, waiting_period, data_history, ranking, no_stocks, std_days
-    (holding_period, data_history, ranking, waiting_period, no_stocks, std_days) = parameters
+    global holding_period, data_history, std_days, cut_off_max, cut_off_min, cut_off_r
+    (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r, std_days) = parameters
 
 
 def scale(prHst):
@@ -68,7 +73,7 @@ def scale(prHst):
         stock = []
         start_price = old_stock[0]
         for price in old_stock:
-            stock.append(price/start_price)
+            stock.append(price / start_price)
         stocks.append(stock)
     return stocks
 
@@ -81,41 +86,50 @@ def get_position_size(hold, short):
 
     positions = []
     for (index, value) in hold:
-        positions.append((index, (value/benchmark_hold) * 9500))
+        positions.append((index, (value / benchmark_hold) * 9500))
 
     for (index, value) in short:
-        positions.append((index, -1 * (value/benchmark_short) * 9500))
+        positions.append((index, -1 * (value / benchmark_short) * 9500))
 
     return positions
 
 
+def ratio_function(ret):
+    ret = abs(ret)
+    if ret > cut_off_max:
+        return 1
+    elif ret > cut_off_min:
+        return (ret / cut_off_min) - 1
+    else:
+        return 0
+
 
 def getMyPosition(prcSoFar, parameters):
-    global holding_period, waiting_period, data_history, ranking, no_stocks
+    global holding_period, waiting_period, data_history, ranking
     set_parameters(parameters)
     position = np.zeros(100)
 
     if prcSoFar.shape[1] <= data_history:
-        return np.zeros(100)
+        return position
 
     current_hold_prices = get_current_hold_prices(prcSoFar)
     scaled_data = scale(current_hold_prices)
-    stock_data = get_data(scaled_data)
+    stock_data = get_data(np.array(scaled_data))
 
     if ranking == "growth":
         stock_data.sort(key=lambda x: x[1], reverse=True)
-        winners = stock_data[:no_stocks]
+        winners = stock_data[:33]
         for i, winner in enumerate(winners):
             index, ret, std = winner
             price = current_hold_prices[index][-1]
-            number_of_shares = math.floor((5000/(i + 1)) / price)
+            number_of_shares = math.floor((5000 / (i + 1)) / price)
             if ret > 0:
                 position[index] = number_of_shares
     elif ranking == "hybrid":
         array = np.array(stock_data)
-        df = pd.DataFrame(array, columns=("index", "returns", "std"))
+        df = pd.DataFrame(array, columns=("index", "returns", "std", "model"))
         x = np.linspace(0, 1, 1000)
-        y = 1 + 0.25 * x
+        y = 1 + 0.5 * x
         y_neg = -1 * y
         y_zero = np.zeros(1000)
 
@@ -123,29 +137,59 @@ def getMyPosition(prcSoFar, parameters):
         short = []
         dead_zone = []
         for i, (x_value, y_value) in enumerate(zip(df["std"], df["returns"])):
-            expected_y_positive = 1 + 0.56 * x_value
+            expected_y_positive = 1 + 0.25 * x_value
             expected_y_negative = -1 * expected_y_positive
             if y_value >= expected_y_positive:
-                hold.append((i,(y_value - 1) / x_value))
+                hold.append((i, (y_value) / x_value))
             elif y_value <= expected_y_negative:
-                short.append((i, (y_value - 1) / x_value))
+                short.append((i, (y_value) / x_value))
             else:
                 dead_zone.append((i, y_value / x_value))
 
         positions = get_position_size(hold, short)
 
         for (index, money) in positions:
-            if money > 0:
-                position[index] = math.floor(money/current_hold_prices[index][-1])
+            position[index] = math.floor(money / current_hold_prices[index][-1])
 
-        # fig, ax = plt.subplots()
-        # ax.scatter(df["std"], df["returns"])
-        # ax.scatter(x, y, marker='_')
-        # for i, (x_1, y_1) in enumerate(zip(df["std"], df["returns"])):
-        #     ax.annotate(i, (x_1, y_1))
-        # ax.scatter(x, y_neg, marker='_')
-        # ax.scatter(x, y_zero, marker='_')
-        # plt.show()
+        # Plotting
+        plot = False
+        if plot:
+            fig, ax = plt.subplots()
+            ax.scatter(df["std"], df["returns"])
+            ax.scatter(x, y, marker='_')
+            for i, (x_1, y_1) in enumerate(zip(df["std"], df["returns"])):
+                ax.annotate(i, (x_1, y_1))
+            ax.scatter(x, y_neg, marker='_')
+            ax.scatter(x, y_zero, marker='_')
+            plt.show()
+    elif ranking == "regression":
+        df = pd.DataFrame(np.array(stock_data), columns=("index", "returns", "std", "r2"))
+
+        positions = []
+        for i, (x_value, y_value) in enumerate(zip(df["r2"], df["returns"])):
+            if x_value > cut_off_r:
+                if y_value > 0:
+
+                    positions.append((i, ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r)))
+                else:
+                    print(i, ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r))
+                    positions.append((i, -1 * ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r)))
+
+        # Plotting
+        plot = False
+        if plot:
+            fig, ax = plt.subplots()
+            ax.scatter(df["r2"], df["returns"])
+            ax.scatter(np.linspace(0.5, 0.5, 1000), np.linspace(-15, 15, 1000), marker='|')
+            for i, (x_1, y_1) in enumerate(zip(df["r2"], df["returns"])):
+                ax.annotate(i, (x_1, y_1))
+            ax.scatter(np.linspace(0, 1, 1000), np.zeros(1000), marker='_')
+            plt.show()
+
+        positions.sort(key=lambda x: x[1])
+
+        for (index, money) in positions:
+            position[index] = math.floor(money / current_hold_prices[index][-1])
 
     # update_position(position, prcSoFar)
 

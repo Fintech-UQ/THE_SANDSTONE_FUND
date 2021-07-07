@@ -4,16 +4,18 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from Oliver_Momentum_Strat import getMyPosition as getPosition
+from plots_and_tools import get_the_market
 
 nInst = 0
 nt = 0
 commRate = 0.0050
 dlrPosLimit = 10000
-holding_period = 5
-data_history = 24 * 5
-ranking = "hybrid"
-waiting_period = 6
-no_stocks = 15
+holding_period = 7
+data_history = 121
+ranking = "regression"
+cut_off_max = 10
+cut_off_min = 4
+cut_off_r = 0.5
 std_days = 60
 
 def loadPrices(fn):
@@ -27,6 +29,19 @@ pricesFile = "./prices250.txt"
 prcAll = loadPrices(pricesFile)
 
 
+def plot_price(prices):
+    x = list(range(0, 250))
+    index = get_the_market(prcAll)
+    fig, ax = plt.subplots()
+    ax.plot(x, prices, color="red", marker="o", markersize=2.5)
+    ax.set_ylabel("Earnings $", fontsize=14)
+    ax.set_xlabel("Trading Days", fontsize=14)
+    ax2 = ax.twinx()
+    ax2.plot(x, index, color="blue", marker="o", markersize=2.5)
+    ax2.set_ylabel("Index Price $", fontsize=14)
+    plt.show()
+
+
 def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("=====")
     print("mean(PL): %.0lf" % mean_pl)
@@ -34,7 +49,7 @@ def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("annSharpe(PL): %.2lf " % sharpe_value)
     print("totDvolume: %.0lf " % d_vol)
 
-
+values_over_data = []
 def calcPL(prcHist, parameters):
     cash = 0
     curPos = np.zeros(nInst)
@@ -67,6 +82,7 @@ def calcPL(prcHist, parameters):
         todayPL = cash + posValue - value
         todayPLL.append(todayPL)
         value = cash + posValue
+        values_over_data.append(value)
         ret = 0.0
         if (totDVolume > 0):
             ret = value / totDVolume
@@ -79,30 +95,34 @@ def calcPL(prcHist, parameters):
     annSharpe = 0.0
     if (plstd > 0):
         annSharpe = 16 * plmu / plstd
+
     return (plmu, ret, annSharpe, totDVolume)
 
 
-def adjust_hyper_parameters(holding_range, history_range, ranking_range, waiting_range, stock_range):
+def adjust_hyper_parameters(holding_range, history_range, cut_max_range, cut_min_range, cut_r_range, std_days_range):
     result = []
     for i in range(holding_range[0], holding_range[1] + 1):
         for j in range(history_range[0], history_range[1] + 1):
-            for k in ranking_range:
-                for m in range(waiting_range[0], waiting_range[1] + 1):
-                    for n in range(stock_range[0], stock_range[1]):
-                        if m <= i:
-                            # print("Starting: ", i, j, k, m, n)
-                            parameters = (i, j * 5, k, m, n)
-                            (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
-                            result.append(((i, j, k, m, n), (meanpl, ret, sharpe, dvol)))
-                            # print("Finished: ", i, j, k, m, n)
+            for k in cut_r_range:
+                for m in range(cut_max_range[0], cut_max_range[1] + 1):
+                    for n in range(cut_min_range[0], cut_min_range[1] + 1):
+                        for o in range(std_days_range[0], std_days_range[1] + 1):
+                            if m > n and o <= j:
+                                print("Starting: ", i, j * 5, m, n, k, o)
+                                parameters = (i, j * 5, m, n, k, o * 5)
+                                (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
+                                result.append(((i, j, k, m, n), (meanpl, ret, sharpe, dvol)))
+                                # print("Finished: ", i, j, k, m, n)
     result.sort(key=lambda x: x[1][1], reverse=True)
     return result
 
 
-parameters = (holding_period, data_history, ranking, waiting_period, no_stocks, std_days)
+parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r, std_days)
 
-# params = adjust_hyper_parameters((1, 5), (1, 40), ("growth", "vol", "g.v"), (1, 10), (10, 40))
+# params = adjust_hyper_parameters((1, 5), (1, 40), (8, 12), (2, 6), (0.4, 0.45, 0.5, 0.55, 0.6), (1, 40))
+
 # print(params[:10])
 
 (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
 print_results(meanpl, ret, sharpe, dvol)
+plot_price(values_over_data)
