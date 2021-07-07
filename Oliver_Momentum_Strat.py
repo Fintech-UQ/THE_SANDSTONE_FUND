@@ -95,11 +95,11 @@ def get_position_size(hold, short):
 
 
 def ratio_function(ret):
-    ret = abs(ret)
-    if ret > cut_off_max:
-        return 1
-    elif ret > cut_off_min:
-        return (ret / cut_off_min) - 1
+    abs_ret = abs(ret)
+    if abs_ret > cut_off_max:
+        return 1 if ret > 0 else -1
+    elif abs_ret > cut_off_min:
+        return (ret / cut_off_min) - 1 if ret > 0 else (ret / cut_off_min) + 1
     else:
         return 0
 
@@ -169,11 +169,9 @@ def getMyPosition(prcSoFar, parameters):
         for i, (x_value, y_value) in enumerate(zip(df["r2"], df["returns"])):
             if x_value > cut_off_r:
                 if y_value > 0:
-
                     positions.append((i, ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r)))
                 else:
-                    print(i, ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r))
-                    positions.append((i, -1 * ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r)))
+                    positions.append((i, ratio_function(y_value) * (x_value - cut_off_r) * 10000 * (1 / cut_off_r)))
 
         # Plotting
         plot = False
