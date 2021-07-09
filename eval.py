@@ -124,7 +124,7 @@ parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r,
 # print(hyper)
 
 # print(params)
-hyper_check = ([15, 30, 50], [4, 2, 4], [0.5, 0.4, 0.8])
+hyper_check = ([15, 30, 65], [4, 2, 4], [0.5, 0.4, 0.8])
 
 (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper_check)
 print_results(meanpl, ret, sharpe, dvol)

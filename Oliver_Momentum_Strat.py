@@ -50,8 +50,8 @@ def getMyPosition(prcSoFar, parameters, hyper):
             write_csv(position)
         yesterday_positions = pd.read_csv("./previous_days.csv").iloc[:, : 100]
 
-    if previous_hold_day % 3 != 0:
-        prcSoFar = prcSoFar[:, :(prcSoFar.shape[1] - (previous_hold_day % 3))]
+    if previous_hold_day % 2 != 0:
+        prcSoFar = prcSoFar[:, :(prcSoFar.shape[1] - (previous_hold_day % 2))]
 
 
     # Data Setting Up
@@ -73,6 +73,8 @@ def getMyPosition(prcSoFar, parameters, hyper):
 
     vibes = np.zeros(100)
     for (index, investment, vibe) in money_investments:
+        if investment != 0:
+            print(index)
         position[index] = math.floor(investment / prcSoFar[index][-1])
         vibes[index] = vibe
 
