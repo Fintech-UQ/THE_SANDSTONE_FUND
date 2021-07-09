@@ -16,7 +16,7 @@ ranking = "regression"
 cut_off_max = 10
 cut_off_min = 5
 cut_off_r = 0.5
-std_days = 41
+std_days = 6
 
 def loadPrices(fn):
     global nt, nInst
@@ -31,7 +31,7 @@ prcAll = loadPrices(pricesFile)
 
 def plot_price(prices):
     x = list(range(0, 250))
-    index = get_the_market(prcAll)
+    index = prcAll[std_days]
     fig, ax = plt.subplots()
     ax.plot(x, prices, color="red", marker="o", markersize=2.5)
     ax.set_ylabel("Earnings $", fontsize=14)
@@ -98,30 +98,34 @@ def calcPL(prcHist, parameters, hyper=None):
     return (plmu, ret, annSharpe, totDVolume)
 
 
-def adjust_hyper_parameters(b1, b2, b3, c1, c2, c3, r1, r2, r3):
+def adjust_hyper_parameters(r1, r2, r3):
     result = []
+    for o in r1:
+        for p in r2:
+            for q in r3:
+                print(o, p, q)
+                hyper = ([15, 30, 50], [4, 2, 1], [o, p, q])
+                (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper)
+                print(meanpl, ret, sharpe, dvol)
+                print("==================\n")
+                result.append(((o, p, q), (meanpl, ret, sharpe, dvol)))
 
-    for i in b1:
-        for j in b2:
-            for k in b3:
-                for l in c1:
-                    for m in c2:
-                        for n in c3:
-                            for o in r1:
-                                for p in r2:
-                                    for q in r3:
-                                        hyper = ([i, j, k], [l, m, n], [o, p, q])
-                                        (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper)
-                                        result.append(((i, j, k, l, m, n, o, p, q), (meanpl, ret, sharpe, dvol)))
-
-    result.sort(key=lambda x: x[1][1], reverse=True)
+    result.sort(key=lambda x: x[1][2], reverse=True)
     return result
 
 
 parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r, std_days)
 
+
+# rs1 = [0.4, 0.5, 0.6, 0.7, 0.8]
+# rs2 = [0.4, 0.5, 0.6, 0.7, 0.8]
+# rs3 = [0.5, 0.6, 0.7]
+# hyper = adjust_hyper_parameters(rs1, rs2, rs3)
+# print(hyper)
+
 # print(params)
-hyper = ([15, 30, 50], [4, 2, 4], [0.5, 0.4, 0.8])
-(meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper)
+hyper_check = ([15, 30, 50], [4, 2, 4], [0.5, 0.4, 0.8])
+
+(meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper_check)
 print_results(meanpl, ret, sharpe, dvol)
 plot_price(values_over_data)

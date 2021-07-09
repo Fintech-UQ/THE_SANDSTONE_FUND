@@ -158,10 +158,6 @@ def plotting_garbage():
     # Combine all the operations and display
     plt.show()
 
-def get_a_vibe_for_the_vibes(prHst):
-    avg_vibe_for_each_stock = []
-    for i in range(250):
-
 def get_vibe(prHst, stock_index):
     max_period = 120
     vibe_periods = [30, 60, 120]

@@ -1,5 +1,6 @@
 from sklearn.linear_model import LinearRegression
 from scipy.stats import linregress
+import pandas as pd
 import numpy as np
 
 
@@ -73,8 +74,4 @@ class Stock:
             return 5000
         else:
             return 0
-        # if self.vibe > 1:
-        #     return 9000
-        # else:
-        #     return 0
 
