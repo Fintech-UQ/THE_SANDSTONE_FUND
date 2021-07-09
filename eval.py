@@ -10,13 +10,13 @@ nInst = 0
 nt = 0
 commRate = 0.0050
 dlrPosLimit = 10000
-holding_period = 7
-data_history = 121
+holding_period = 1
+data_history = 71
 ranking = "regression"
 cut_off_max = 10
-cut_off_min = 4
+cut_off_min = 5
 cut_off_r = 0.5
-std_days = 60
+std_days = 41
 
 def loadPrices(fn):
     global nt, nInst
@@ -50,7 +50,7 @@ def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("totDvolume: %.0lf " % d_vol)
 
 values_over_data = []
-def calcPL(prcHist, parameters):
+def calcPL(prcHist, parameters, hyper=None):
     cash = 0
     curPos = np.zeros(nInst)
     totDVolume = 0
@@ -63,7 +63,7 @@ def calcPL(prcHist, parameters):
     (_, nt) = prcHist.shape
     for t in range(1, 251):
         prcHistSoFar = prcHist[:, :t]
-        newPosOrig = getPosition(prcHistSoFar, parameters)
+        newPosOrig = getPosition(prcHistSoFar, parameters, hyper)
         curPrices = prcHistSoFar[:, -1]
         posLimits = np.array([int(x) for x in dlrPosLimit / curPrices])
         newPos = np.array([int(p) for p in np.clip(newPosOrig, -posLimits, posLimits)])
@@ -95,34 +95,33 @@ def calcPL(prcHist, parameters):
     annSharpe = 0.0
     if (plstd > 0):
         annSharpe = 16 * plmu / plstd
-
     return (plmu, ret, annSharpe, totDVolume)
 
 
-def adjust_hyper_parameters(holding_range, history_range, cut_max_range, cut_min_range, cut_r_range, std_days_range):
+def adjust_hyper_parameters(b1, b2, b3, c1, c2, c3, r1, r2, r3):
     result = []
-    for i in range(holding_range[0], holding_range[1] + 1):
-        for j in range(history_range[0], history_range[1] + 1):
-            for k in cut_r_range:
-                for m in range(cut_max_range[0], cut_max_range[1] + 1):
-                    for n in range(cut_min_range[0], cut_min_range[1] + 1):
-                        for o in range(std_days_range[0], std_days_range[1] + 1):
-                            if m > n and o <= j:
-                                print("Starting: ", i, j * 5, m, n, k, o)
-                                parameters = (i, j * 5, m, n, k, o * 5)
-                                (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
-                                result.append(((i, j, k, m, n), (meanpl, ret, sharpe, dvol)))
-                                # print("Finished: ", i, j, k, m, n)
+
+    for i in b1:
+        for j in b2:
+            for k in b3:
+                for l in c1:
+                    for m in c2:
+                        for n in c3:
+                            for o in r1:
+                                for p in r2:
+                                    for q in r3:
+                                        hyper = ([i, j, k], [l, m, n], [o, p, q])
+                                        (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper)
+                                        result.append(((i, j, k, l, m, n, o, p, q), (meanpl, ret, sharpe, dvol)))
+
     result.sort(key=lambda x: x[1][1], reverse=True)
     return result
 
 
 parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r, std_days)
 
-# params = adjust_hyper_parameters((1, 5), (1, 40), (8, 12), (2, 6), (0.4, 0.45, 0.5, 0.55, 0.6), (1, 40))
-
-# print(params[:10])
-
-(meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters)
+# print(params)
+hyper = ([15, 30, 50], [4, 2, 4], [0.5, 0.4, 0.8])
+(meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper)
 print_results(meanpl, ret, sharpe, dvol)
 plot_price(values_over_data)
