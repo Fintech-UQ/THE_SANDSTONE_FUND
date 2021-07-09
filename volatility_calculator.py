@@ -115,9 +115,46 @@ def get_avg_every_5_days(arr):
         every_5_days.append(np.average(arr[i:i+5]))
     return every_5_days
 
+
+def volatility_return_ranker(prHist):
+    num_days = 30
+    vol = []
+    for i in range(len(prHist)):
+        stock = prHist[i]
+        past_n_days = stock[len(prHist) - num_days:]
         
+        vol.append((i, np.std(past_n_days)*math.sqrt(num_days)))
+    vol.sort()
+    print(vol)
+    # ((percent return)/(vol*som_constant) - 1)*something
+    # dead_zone is volatility*gradient = return 
+
+def get_the_market(prHst):
+    # get the intial amount of shares owned by puting one dolar in each of them 
+    # the total value should be 250
+    # then for each day plot the value 
+    number_of_shares_owned_for_each_stock = []
+    for stock in prHst:
+        #add the number of shares owned on day 1 (index 0) if $1 is invested
+        number_of_shares_owned_for_each_stock.append(1/stock[0])
+    return number_of_shares_owned_for_each_stock
+    # an array for the market value for each day of $1 in each stonk
+    # the_market_value = []
+    # #looping through each day
+    # for day in prHst.T:
+    #     value_for_the_day = 0
+    #     # loops through the prices of each stock for that day
+    #     for i in range(len(day)):
+    #         value_for_the_day += day[i]*number_of_shares_owned_for_each_stock[i]
+    #     the_market_value.append(value_for_the_day)
+    
+    # return the_market_value
+
+
+
 
 if __name__ == "__main__":
-    percent_change_volatility(data)
-    stocks_betas = stocks_beta(data)
-    plot_stock_volatilities(data, stocks_betas)
+    #percent_change_volatility(data)
+    #stocks_betas = stocks_beta(data)
+    #plot_stock_volatilities(data, stocks_betas)
+    volatility_return_ranker(data)
