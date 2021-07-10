@@ -73,12 +73,13 @@ def getMyPosition(prcSoFar, parameters, hyper):
 
     vibes = np.zeros(100)
     for (index, investment, vibe) in money_investments:
-        if investment != 0:
-            print(index)
+        # if index == std_days:
+        #     print(vibe)
         position[index] = math.floor(investment / prcSoFar[index][-1])
         vibes[index] = vibe
 
     for index in range(100):
+        # if index == std_days:
         if yesterday_positions.iloc[-1][f"{index}"] != 0 and position[index] > 0:
             if (yesterday_positions.iloc[-1][f"{index}"] * prcSoFar[index][-1]) > 10000:
                 position[index] = 8000

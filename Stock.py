@@ -72,6 +72,16 @@ class Stock:
             return 6000
         elif self.vibe > 1:
             return 5000
+        # elif self.vibe < -1:
+        #     return -5000
+        # elif self.vibe < -2:
+        #     return -6000
+        # elif self.vibe < -3:
+        #     return -7000
+        # elif self.vibe < -4:
+        #     return -7500
+        # elif self.vibe < -5:
+        #     return -8000
         else:
             return 0
 
