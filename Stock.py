@@ -14,6 +14,7 @@ class Stock:
         self.linear_model = LinearRegression()
         self.current_day = len(historic_price)
         self.scaled_stocks = []
+        self.short_strat = []
         self.vibe = 0
 
     def get_price(self):
@@ -54,34 +55,49 @@ class Stock:
             self.update_model(period)
             if self.get_r_squared(period) < r2_cutoff:
                 self.vibe = 0
+                if self.linear_model.coef_ < 0:
+                    short_vibe = self.update_short_vibe(self.short_strat[0], self.short_strat[1], self.short_strat[2])
+                    if short_vibe != 0 and short_vibe < 0:
+                        self.vibe = short_vibe
                 return
             total_vibe += coefficient * self.linear_model.coef_ * 10 * self.get_r_squared(period)
         self.vibe = (total_vibe / sum(periods)) * 1000
+
+    def update_short_vibe(self, periods, coefficients, r2_cutoffs):
+        total_vibe = 0
+        for (period, coefficient, r2_cutoff) in zip(periods, coefficients, r2_cutoffs):
+            self.update_model(period)
+            if self.get_r_squared(period) < r2_cutoff:
+                # total_vibe += 0
+                return 0
+            else:
+                total_vibe += coefficient * self.linear_model.coef_ * 10 * self.get_r_squared(period)
+        return (total_vibe / sum(periods)) * 1000
 
     def get_vibe(self):
         return self.vibe
 
     def get_today_investment(self):
-        if self.vibe > 5:
-            return 8000
-        elif self.vibe > 4:
-            return 7500
-        elif self.vibe > 3:
-            return 7000
-        elif self.vibe > 2:
-            return 6000
-        elif self.vibe > 1:
-            return 5000
-        # elif self.vibe < -1:
-        #     return -5000
-        # elif self.vibe < -2:
-        #     return -6000
-        # elif self.vibe < -3:
-        #     return -7000
-        # elif self.vibe < -4:
-        #     return -7500
-        # elif self.vibe < -5:
-        #     return -8000
+        # if self.vibe > 5:
+        #     return 8000
+        # elif self.vibe > 4:
+        #     return 7500
+        # elif self.vibe > 3:
+        #     return 7000
+        # elif self.vibe > 2:
+        #     return 6000
+        # elif self.vibe > 1:
+        #     return 5000
+        if self.vibe < -1:
+            return -5000
+        elif self.vibe < -2:
+            return -6000
+        elif self.vibe < -3:
+            return -7000
+        elif self.vibe < -4:
+            return -7500
+        elif self.vibe < -5:
+            return -8000
         else:
             return 0
 

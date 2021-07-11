@@ -16,7 +16,7 @@ ranking = "regression"
 cut_off_max = 10
 cut_off_min = 5
 cut_off_r = 0.5
-std_days = 5
+std_days = 9
 
 def loadPrices(fn):
     global nt, nInst
@@ -32,8 +32,8 @@ print(prcAll.shape)
 
 def plot_price(prices):
     x = list(range(0, 250))
-    index = prcAll[std_days]
-    # index = get_the_market(prcAll)
+    # index = prcAll[std_days]
+    index = get_the_market(prcAll)
     fig, ax = plt.subplots()
     ax.plot(x, prices, color="red", marker="o", markersize=2.5)
     ax.set_ylabel("Earnings $", fontsize=14)
@@ -127,7 +127,7 @@ parameters = (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r,
 
 # print(params)
 
-hyper_check = ([15, 30, 65], [4, 0, 4], [0.5, 0, 0.8])
+hyper_check = ([15, 30, 65], [4, 0, 4], [0.5, 0, 0.8], [15, 30, 65], [4, 0, 4], [0.6, 0, 0.5])
 
 (meanpl, ret, sharpe, dvol) = calcPL(prcAll, parameters, hyper_check)
 print_results(meanpl, ret, sharpe, dvol)

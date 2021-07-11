@@ -23,8 +23,9 @@ def set_parameters(parameters):
     (holding_period, data_history, cut_off_max, cut_off_min, cut_off_r, std_days) = parameters
 
 
-def write_csv(position, vibe=np.zeros(100)):
-    position = np.append(position, [vibe])
+def write_csv(position, anchors=np.zeros(100), threshold=np.zeros(100)):
+    position = np.append(position, [anchors])
+    position = np.append(position, [threshold])
     data_frame = pd.DataFrame(position).T
     if os.path.isfile("./previous_days.csv"):
         df = pd.read_csv("./previous_days.csv")
@@ -38,6 +39,8 @@ def write_csv(position, vibe=np.zeros(100)):
 def getMyPosition(prcSoFar, parameters, hyper):
     global holding_period, waiting_period, data_history, ranking
     set_parameters(parameters)
+
+
     position = np.zeros(100)
     if prcSoFar.shape[1] == 1 and os.path.isfile("./previous_days.csv"):
         os.remove("./previous_days.csv")
@@ -48,7 +51,10 @@ def getMyPosition(prcSoFar, parameters, hyper):
     else:
         if prcSoFar.shape[1] == data_history + 1:
             write_csv(position)
+
         yesterday_positions = pd.read_csv("./previous_days.csv").iloc[:, : 100]
+        yesterday_anchor = pd.read_csv("./previous_days.csv").iloc[:, 100:200]
+        yesterday_threshold = pd.read_csv("./previous_days.csv").iloc[:, 200:]
 
     if previous_hold_day % 2 != 0:
         prcSoFar = prcSoFar[:, :(prcSoFar.shape[1] - (previous_hold_day % 2))]
@@ -60,7 +66,12 @@ def getMyPosition(prcSoFar, parameters, hyper):
         vibe_periods = hyper[0]
         vibe_coefficients = hyper[1]
         r2_cutoffs = hyper[2]
+        short_vibe_periods = hyper[3]
+        short_vibe_coeficients = hyper[4]
+        short_r2_cutoffs = hyper[5]
+
         new_stock = Stock(i, prcSoFar[i])
+        new_stock.short_strat = (short_vibe_periods, short_vibe_coeficients, short_r2_cutoffs)
         new_stock.set_training_days(data_history)
         new_stock.scale_stocks()
         new_stock.update_vibe(vibe_periods, vibe_coefficients, r2_cutoffs)
@@ -71,12 +82,51 @@ def getMyPosition(prcSoFar, parameters, hyper):
     for i in range(100):
         money_investments.append((i, stocks[i].get_today_investment(), stocks[i].get_vibe()))
 
-    vibes = np.zeros(100)
+    threshold_changes = [-1, -3.5, -4.5, -5.5, -6, -8]
+    anchors = np.zeros(100)
+    threshold = np.zeros(100)
     for (index, investment, vibe) in money_investments:
         # if index == std_days:
-        #     print(vibe)
         position[index] = math.floor(investment / prcSoFar[index][-1])
-        vibes[index] = vibe
+        # today_price = prcSoFar[index][-1]
+        # previous_anchor = yesterday_anchor.iloc[-1][f"{index + 100}"]
+        # if vibe > 0:
+        #     if previous_anchor < today_price:
+        #         anchors[index] = today_price
+        #     elif previous_anchor > today_price:
+        #         anchors[index] = yesterday_anchor.iloc[-1][f"{index + 100}"]
+        #     position[index] = math.floor(investment / prcSoFar[index][-1])
+        # else:
+        #     if previous_anchor < today_price:
+        #         anchors[index] = today_price
+        #         position[index] = math.floor(investment / prcSoFar[index][-1])
+        #     else:
+        #         percent_change = (((today_price - previous_anchor) / previous_anchor) * 100)
+        #         if -3 >= percent_change > -10 and yesterday_positions.iloc[-1][f"{index}"] == 0:
+        #             threshold[index] = -1
+        #             position[index] = math.floor(-1000 / prcSoFar[index][-1])
+        #             anchors[index] = previous_anchor
+        #         elif -3 >= percent_change > -10 and yesterday_positions.iloc[-1][f"{index}"] != 0:
+        #             if yesterday_threshold.iloc[-1][f"{index + 200}"] <= percent_change:
+        #                 threshold[index] = 0
+        #                 position[index] = 0
+        #                 anchors[index] = today_price
+        #             else:
+        #                 temp = yesterday_threshold.iloc[-1][f"{index + 200}"]
+        #                 for threshold_change in threshold_changes:
+        #                     if percent_change < threshold_change < yesterday_threshold.iloc[-1][f"{index + 200}"]:
+        #                         temp = threshold_change
+        #                     elif temp == 0:
+        #                         continue
+        #                     else:
+        #                         break
+        #                 threshold[index] = temp
+        #                 position[index] = math.floor(yesterday_positions.iloc[-1][f"{index}"])
+        #                 anchors[index] = yesterday_anchor.iloc[-1][f"{index + 100}"]
+        #         else:
+        #             anchors[index] = yesterday_anchor.iloc[-1][f"{index + 100}"]
+        #             position[index] = math.floor(yesterday_positions.iloc[-1][f"{index}"])
+        #             continue
 
     for index in range(100):
         # if index == std_days:
@@ -86,5 +136,5 @@ def getMyPosition(prcSoFar, parameters, hyper):
             else:
                 position[index] = yesterday_positions.iloc[-1][f"{index}"]
 
-    write_csv(position, vibes)
+    write_csv(position, anchors, threshold)
     return position
