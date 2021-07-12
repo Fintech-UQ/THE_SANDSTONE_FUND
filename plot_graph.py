@@ -1,35 +1,28 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-
-def loadPrices(fn):
-    global nt, nInst
-    df = pd.read_csv(fn, sep='\s+', header=None, index_col=None)
-    nt, nInst = df.values.shape
-    return df.values.T
+import numpy as np
 
 
-pricesFile = "./prices250.txt"
-prcAll = loadPrices(pricesFile)
+
+r2_values = pd.read_csv("./temp.csv")
+prcAll = r2_values.values.T
+
+y_1 = prcAll[0][:179]
+y_2 = prcAll[0][179:]
+
+print(prcAll.shape)
+for i in range(179):
+
+    print(i, y_1[i], y_2[i])
 
 
-def plot_price(prices, stock,  consider=False):
-    if consider:
-        x = list(range(0, 250))
-        index = prcAll[18]
-        fig, ax = plt.subplots()
-        ax.plot(x, prices, color="red", marker="o", markersize=2.5)
-        ax.set_ylabel("Earnings $", fontsize=14)
-        ax.set_xlabel("Trading Days", fontsize=14)
-        ax2 = ax.twinx()
-        ax2.plot(x, index, color="blue", marker="o", markersize=2.5)
-        ax2.set_ylabel("Index Price $", fontsize=14)
-        plt.show()
-    else:
-        x = list(range(0, 250))
-        index = prcAll[stock]
-        plt.plot(x, index, color="blue", marker="o", markersize=2.5)
-        plt.savefig(f"./Stocks/Stock {stock}.png")
-        plt.cla()
+x = list(range(71, 250))
+# y_3 = three[2]
+fig, ax = plt.subplots()
+ax.plot(x, y_1, color="red", marker="o", markersize=2.5)
+ax2 = ax.twinx()
+ax2.plot(x, y_2, color="blue", marker="o", markersize=2.5)
+plt.show()
 
-for stock in range(100):
-    plot_price([1], stock)
+
+
