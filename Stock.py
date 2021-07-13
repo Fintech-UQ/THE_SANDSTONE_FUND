@@ -1,9 +1,5 @@
 from sklearn.linear_model import LinearRegression
-from scipy.stats import linregress
-import pandas as pd
 import numpy as np
-import os
-
 
 class Stock:
 
@@ -16,7 +12,6 @@ class Stock:
         self.current_day = len(historic_price)
         self.scaled_stocks = []
         self.vibe = 0
-        self.searching = 0
 
     def get_price(self):
         return self.price
@@ -63,16 +58,6 @@ class Stock:
 
     def get_vibe(self):
         return self.vibe
-
-    def get_rolling_avg(self):
-        return np.sum(self.training_days) / len(self.training_days)
-
-    def get_std(self):
-        mean = np.mean(self.training_days)
-        price_flux = []
-        for price in self.training_days:
-            price_flux.append(np.square(price - mean))
-        return np.sqrt(np.sum(price_flux) / len(self.training_days))
 
     def get_position_size(self):
         if self.vibe > 5:

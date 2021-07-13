@@ -23,7 +23,7 @@ def get_the_market(prHst):
     number_of_shares_owned_for_each_stock = []
     for stock in prHst:
         #add the number of shares owned on day 1 (index 0) if $1 is invested
-        number_of_shares_owned_for_each_stock.append(1/stock[0])
+        number_of_shares_owned_for_each_stock.append(1)
 
     # an array for the market value for each day of $1 in each stonk
     the_market_value = []
