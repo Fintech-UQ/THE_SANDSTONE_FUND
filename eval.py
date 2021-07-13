@@ -1,14 +1,11 @@
 #!/usr/bin/envblah python
-
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from teamName import getMyPosition as getPosition
-from plots_and_tools import get_the_market
+from The_Sandstone_Fund import getMyPosition as getPosition
 
 nInst = 0
 nt = 0
-commRate = 0.0000
+commRate = 0.0050
 dlrPosLimit = 10000
 
 def loadPrices(fn):
@@ -18,26 +15,8 @@ def loadPrices(fn):
     return df.values.T
 
 
-# pricesFile = "./prices250.txt"
-# prcAll = loadPrices(pricesFile)
-
-etherum_prices = pd.read_csv("./prices250.csv")
-nt, nInst = etherum_prices.values.shape
-prcAll = etherum_prices.values.T
-
-
-def plot_price(prices):
-    x = list(range(0, 250))
-    index = prcAll[97]
-    # index = get_the_market(prcAll)
-    fig, ax = plt.subplots()
-    ax.plot(x, prices, color="red", marker="o", markersize=2.5)
-    ax.set_ylabel("Earnings $", fontsize=14)
-    ax.set_xlabel("Trading Days", fontsize=14)
-    ax2 = ax.twinx()
-    ax2.plot(x, index, color="blue", marker="o", markersize=2.5)
-    ax2.set_ylabel("Index Price $", fontsize=14)
-    plt.show()
+pricesFile = "./prices250.txt"
+prcAll = loadPrices(pricesFile)
 
 
 def print_results(mean_pl, returns, sharpe_value, d_vol):
@@ -47,7 +26,7 @@ def print_results(mean_pl, returns, sharpe_value, d_vol):
     print("annSharpe(PL): %.2lf " % sharpe_value)
     print("totDvolume: %.0lf " % d_vol)
 
-values_over_data = []
+
 def calcPL(prcHist):
     cash = 0
     curPos = np.zeros(nInst)
@@ -80,7 +59,6 @@ def calcPL(prcHist):
         todayPL = cash + posValue - value
         todayPLL.append(todayPL)
         value = cash + posValue
-        values_over_data.append(value)
         ret = 0.0
         if (totDVolume > 0):
             ret = value / totDVolume
@@ -97,4 +75,3 @@ def calcPL(prcHist):
 
 (meanpl, ret, sharpe, dvol, value) = calcPL(prcAll)
 print_results(meanpl, ret, sharpe, dvol)
-plot_price(values_over_data)
